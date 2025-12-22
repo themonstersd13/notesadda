@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Animations */
+@layer utilities {
+  .animate-in {
+    animation-duration: 500ms;
+    animation-fill-mode: both;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .fade-in {
+    animation-name: fadeIn;
+  }
+  .slide-in-from-bottom-4 {
+    --tw-enter-translate-y: 1rem;
+    animation-name: slideIn;
+  }
+  .slide-in-from-bottom-10 {
+    --tw-enter-translate-y: 2.5rem;
+    animation-name: slideIn;
+  }
+  .slide-in-from-top-2 {
+    --tw-enter-translate-y: -0.5rem;
+    animation-name: slideIn;
+  }
+  .slide-in-from-right-8 {
+    --tw-enter-translate-x: 2rem;
+    animation-name: slideInX;
+  }
+  .zoom-in-95 {
+    --tw-enter-scale: 0.95;
+    animation-name: zoomIn;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(var(--tw-enter-translate-y, 0)); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInX {
+  from { transform: translateX(var(--tw-enter-translate-x, 0)); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes zoomIn {
+  from { transform: scale(var(--tw-enter-scale, 1)); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
