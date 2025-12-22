@@ -20,10 +20,10 @@ const storage = new CloudinaryStorage({
             access_mode: 'public', 
             // PDFs usually work better as 'raw' or 'image' depending on use case. 
             // 'auto' is safest, but sometimes defaults to private.
-            resource_type: 'raw', 
+            resource_type: 'auto', 
             allowed_formats: ['pdf'],
             // Use original filename or unique ID
-            public_id: file.originalname.split('.')[0] + '-' + Date.now()+ '.pdf'
+            public_id: file.originalname.split('.')[0] + '-' + Date.now()
         };
     },
 });
