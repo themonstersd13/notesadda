@@ -9,7 +9,7 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(cors({ origin: process.env.FRONTEND_URL || '*' })); // Allow Frontend
+app.use(cors('https://notesadda.vercel.app/')); // Allow Frontend
 app.use(express.json());
 
 // Routes
