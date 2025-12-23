@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // <--- FIX 1: Added useEffect
+import React, { useState, useEffect, useCallback } from 'react';
 import { Shield, Sparkles } from 'lucide-react';
 import api from './services/api';
 
@@ -17,60 +17,56 @@ import { SubjectView } from './views/SubjectView';
 import { NotesListView } from './views/NotesListView';
 import { ContributeView } from './views/ContributeView';
 import { MyNotesWorkspace } from './views/MyNotesWorkspace';
+import { AboutView } from './views/AboutView';
+import { PrivacyView } from './views/PrivacyView'; // <-- NEW
+import { TermsView } from './views/TermsView';     // <-- NEW
+import { SupportView } from './views/SupportView'; // <-- NEW
 
 // Data
 import { BRANCHES, INITIAL_SUBJECTS_DATA } from './data/mockData';
 
 export default function App() {
-  // --- STATE DECLARATIONS (MUST COME FIRST) ---
   const [view, setView] = useState('branches'); 
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [selectedYear, setSelectedYear] = useState(null);
   const [selectedSemester, setSelectedSemester] = useState(null);
   const [selectedSubject, setSelectedSubject] = useState(null);
-  const [subjectsData, setSubjectsData] = useState(INITIAL_SUBJECTS_DATA);
   
+  const [subjectsData, setSubjectsData] = useState(INITIAL_SUBJECTS_DATA);
   const [user, setUser] = useState({ name: "Guest", role: "guest", loggedIn: false });
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isGeminiOpen, setIsGeminiOpen] = useState(false);
 
-  // --- USE EFFECT (MUST COME AFTER STATE) ---
-  useEffect(() => {
-    // 1. Fetch Subjects from Backend
-    const fetchSubjects = async () => {
-        try {
-            const res = await api.get('/subjects');
-            // Only update if backend returns data, otherwise keep initial mock data
-            if (res.data && Object.keys(res.data).length > 0) {
-                setSubjectsData(res.data);
-            }
-        } catch (err) {
-            console.error("Failed to load subjects, using fallback data", err);
+  const fetchSubjects = useCallback(async () => {
+    try {
+        const res = await api.get('/subjects');
+        if (res.data && Object.keys(res.data).length > 0) {
+            setSubjectsData(res.data);
         }
-    };
-    fetchSubjects();
-    
-    // 2. Check for logged in user (Session Persistence)
+    } catch (err) {
+        console.error("Failed to load subjects", err);
+    }
+  }, []);
+
+  useEffect(() => {
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
     if (token && userStr) {
         setUser({ ...JSON.parse(userStr), loggedIn: true });
     }
 
-    // Hash-based navigation (e.g., footer links)
     const applyHash = () => {
       const h = window.location.hash.replace('#', '');
       if (h) setView(h);
     };
     applyHash();
     window.addEventListener('hashchange', applyHash);
-    return () => {
-      window.removeEventListener('hashchange', applyHash);
-    };
+    return () => window.removeEventListener('hashchange', applyHash);
   }, []);
 
-  // --- HANDLERS ---
-  const navigateTo = (destination) => setView(destination);
+  useEffect(() => {
+    fetchSubjects();
+  }, [view, fetchSubjects]);
 
   const handleBranchSelect = (branchId) => {
     setSelectedBranch(branchId);
@@ -90,7 +86,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans selection:bg-indigo-500/30 flex flex-col">
       <BackgroundEffects />
 
       <Navbar 
@@ -106,7 +102,7 @@ export default function App() {
         onSearchSelect={handleSearchSelect}
       />
 
-      <main className="relative z-10 container mx-auto px-4 pt-24 pb-12 min-h-screen">
+      <main className="relative z-10 container mx-auto px-4 pt-24 pb-12 flex-grow">
         
         {view === 'branches' && (
            <BranchSelectionView onSelectBranch={handleBranchSelect} />
@@ -116,10 +112,12 @@ export default function App() {
           <HomeView 
             branchName={BRANCHES.find(b => b.id === selectedBranch)?.name}
             onSelectYear={(year) => { setSelectedYear(year); setView('semester'); }}
-            navigateTo={navigateTo}
+            navigateTo={(v) => setView(v)}
             onBack={() => setView('branches')}
           />
         )}
+        
+        {view === 'home' && !selectedBranch && <BranchSelectionView onSelectBranch={handleBranchSelect} />}
 
         {view === 'semester' && (
           <SemesterView 
@@ -138,6 +136,7 @@ export default function App() {
             user={user}
             onBack={() => setView('semester')}
             onSelectSubject={(sub) => { setSelectedSubject(sub); setView('notes'); }}
+            refreshData={fetchSubjects} 
           />
         )}
 
@@ -145,6 +144,7 @@ export default function App() {
           <NotesListView 
             subject={selectedSubject}
             onBack={() => setView('subject')}
+            user={user}
           />
         )}
 
@@ -158,14 +158,26 @@ export default function App() {
             onBack={() => setView('branches')} 
           />
         )}
+
+        {view === 'about' && (
+            <AboutView 
+                onBack={() => setView('branches')} 
+                onGetStarted={() => setView('branches')} 
+            />
+        )}
+
+        {/* --- NEW FOOTER PAGES --- */}
+        {view === 'privacy' && <PrivacyView onBack={() => setView('branches')} />}
+        {view === 'terms' && <TermsView onBack={() => setView('branches')} />}
+        {view === 'support' && <SupportView onBack={() => setView('branches')} />}
+
       </main>
 
       <Footer />
 
-      {/* Floating Action Buttons */}
       <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-4">
          {user.role === 'admin' && (
-            <div className="w-14 h-14 rounded-full bg-red-500/20 border border-red-500/50 flex items-center justify-center text-red-400 shadow-lg" title="Admin Mode Active">
+            <div className="w-14 h-14 rounded-full bg-rose-500/20 border border-rose-500/50 flex items-center justify-center text-rose-400 shadow-lg" title="Admin Mode Active">
                 <Shield size={24} />
             </div>
          )}

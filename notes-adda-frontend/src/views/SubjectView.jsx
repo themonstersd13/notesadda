@@ -1,44 +1,58 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Save, Edit2, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { BRANCHES } from '../data/mockData';
+import api from '../services/api';
 
-export const SubjectView = ({ branch, semester, subjectsData, setSubjectsData, user, onBack, onSelectSubject }) => {
+export const SubjectView = ({ branch, semester, subjectsData, setSubjectsData, user, onBack, onSelectSubject, refreshData }) => {
   const subjects = subjectsData[branch]?.[semester] || [];
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [editValue, setEditValue] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [newValue, setNewValue] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleDelete = (index, e) => {
+  const handleDelete = async (e, subjectName) => {
     e.stopPropagation();
-    if (!window.confirm("Are you sure? This action is simulating a DB delete.")) return;
-    const updatedList = [...subjects];
-    updatedList.splice(index, 1);
-    updateSubjectsDB(updatedList);
+    if (!window.confirm(`Delete subject "${subjectName}"? This cannot be undone.`)) return;
+    
+    try {
+        // Send delete request with body
+        await api.delete('/subjects', { 
+            data: { branch, semester, name: subjectName } 
+        });
+        
+        // Optimistic Update
+        const updatedList = subjects.filter(s => s !== subjectName);
+        updateSubjectsDB(updatedList);
+        
+        // Ensure sync
+        if(refreshData) refreshData();
+    } catch (err) {
+        alert("Failed to delete subject: " + (err.response?.data?.message || err.message));
+    }
   };
 
-  const handleEditStart = (index, currentName, e) => {
-    e.stopPropagation();
-    setEditingIndex(index);
-    setEditValue(currentName);
-  };
-
-  const handleEditSave = (e) => {
-    e.stopPropagation();
-    const updatedList = [...subjects];
-    updatedList[editingIndex] = editValue;
-    updateSubjectsDB(updatedList);
-    setEditingIndex(null);
-  };
-
-  const handleAddSubject = () => {
+  const handleAddSubject = async () => {
       if(!newValue.trim()) return;
-      const updatedList = [...subjects, newValue];
-      updateSubjectsDB(updatedList);
-      setNewValue("");
-      setIsAdding(false);
+      setLoading(true);
+      try {
+          await api.post('/subjects', {
+              branch,
+              semester,
+              name: newValue
+          });
+          
+          const updatedList = [...subjects, newValue];
+          updateSubjectsDB(updatedList);
+          setNewValue("");
+          setIsAdding(false);
+          
+          if(refreshData) refreshData();
+      } catch (err) {
+          alert("Failed to add subject: " + (err.response?.data?.message || err.message));
+      } finally {
+          setLoading(false);
+      }
   };
 
   const updateSubjectsDB = (newList) => {
@@ -58,7 +72,7 @@ export const SubjectView = ({ branch, semester, subjectsData, setSubjectsData, u
             <Button variant="ghost" onClick={onBack} icon={ChevronLeft}>Back</Button>
             <div>
                 <h2 className="text-2xl font-bold">{semester}</h2>
-                <p className="text-slate-400 text-sm">{BRANCHES.find(b => b.id === branch)?.name}</p>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">{BRANCHES.find(b => b.id === branch)?.name}</p>
             </div>
          </div>
          {user.role === 'admin' && (
@@ -69,57 +83,53 @@ export const SubjectView = ({ branch, semester, subjectsData, setSubjectsData, u
       </div>
 
       {isAdding && (
-          <div className="mb-6 p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-xl flex gap-3 animate-in fade-in slide-in-from-top-2">
+          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex gap-3 animate-in fade-in slide-in-from-top-2">
               <Input 
                  placeholder="Enter new subject name..." 
                  value={newValue} 
                  onChange={(e) => setNewValue(e.target.value)} 
-                 className="!bg-slate-900"
+                 className="bg-white dark:bg-slate-900"
               />
-              <Button variant="primary" onClick={handleAddSubject}>Add</Button>
+              <Button variant="primary" onClick={handleAddSubject} disabled={loading}>
+                  {loading ? "Adding..." : "Add"}
+              </Button>
           </div>
       )}
 
       <div className="grid grid-cols-1 gap-4">
         {subjects.length === 0 && (
-            <div className="text-center p-12 text-slate-500 border border-dashed border-slate-800 rounded-2xl">
-                No subjects found for this semester. Admins can add them.
+            <div className="text-center p-12 text-slate-500 border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl">
+                No subjects found for this semester.
+                {user.role === 'admin' && " You can add one above."}
             </div>
         )}
         
         {subjects.map((sub, idx) => (
           <div 
             key={idx}
-            onClick={() => editingIndex === null && onSelectSubject(sub)}
-            className="group flex items-center justify-between p-5 rounded-2xl bg-slate-800/30 border border-white/5 hover:bg-slate-800/50 hover:border-indigo-500/30 cursor-pointer transition-all"
+            onClick={() => onSelectSubject(sub)}
+            className="group flex items-center justify-between p-5 rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 hover:border-indigo-500/30 hover:shadow-lg dark:hover:bg-slate-800 transition-all cursor-pointer"
           >
             <div className="flex items-center gap-4 flex-1">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold shrink-0">
                 {sub.charAt(0)}
               </div>
-              
-              {editingIndex === idx ? (
-                  <div className="flex-1 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Input value={editValue} onChange={(e) => setEditValue(e.target.value)} />
-                      <Button variant="success" onClick={handleEditSave} className="!p-2"><Save size={16} /></Button>
-                  </div>
-              ) : (
-                  <span className="font-medium text-lg">{sub}</span>
-              )}
+              <span className="font-medium text-lg text-slate-800 dark:text-slate-200">{sub}</span>
             </div>
 
             <div className="flex items-center gap-3">
-                {user.role === 'admin' && editingIndex !== idx && (
+                {user.role === 'admin' && (
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={(e) => handleEditStart(idx, sub, e)} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg">
-                            <Edit2 size={18} />
-                        </button>
-                        <button onClick={(e) => handleDelete(idx, e)} className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg">
+                        <button 
+                            onClick={(e) => handleDelete(e, sub)} 
+                            className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                            title="Delete Subject"
+                        >
                             <Trash2 size={18} />
                         </button>
                     </div>
                 )}
-                <ChevronRight size={18} className="text-slate-500" />
+                <ChevronRight size={18} className="text-slate-400" />
             </div>
           </div>
         ))}

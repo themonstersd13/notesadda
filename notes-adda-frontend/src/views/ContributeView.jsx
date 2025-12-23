@@ -5,6 +5,7 @@ import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { MOCK_SEMESTERS } from '../data/mockData';
 import api from '../services/api';
+
 export const ContributeView = ({ onBack, branches, subjectsData, setSubjectsData }) => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -28,31 +29,36 @@ export const ContributeView = ({ onBack, branches, subjectsData, setSubjectsData
         return;
     }
 
+    if (!file || !formData.title) {
+        alert('Please fill in all fields and select a file.');
+        return;
+    }
+
     const formDataToSend = new FormData();
     formDataToSend.append('file', file);
-formDataToSend.append('title', formData.title);
-formDataToSend.append('branch', formData.branch);
-formDataToSend.append('semester', formData.semester);
+    formDataToSend.append('title', formData.title);
+    formDataToSend.append('branch', formData.branch);
+    formDataToSend.append('semester', formData.semester);
 
-if (isNewSubject) {
-    formDataToSend.append('subject', formData.newSubjectName);
-    formDataToSend.append('isNewSubject', 'true');
-} else {
-    formDataToSend.append('subject', formData.subject);
-}
+    if (isNewSubject) {
+        formDataToSend.append('subject', formData.newSubjectName);
+        formDataToSend.append('isNewSubject', 'true');
+    } else {
+        formDataToSend.append('subject', formData.subject);
+    }
 
-try {
-    setUploading(true);
-    await api.post('/notes', formDataToSend, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    alert("Upload Successful!");
-    onBack();
-} catch (err) {
-    alert("Upload Failed: " + (err.response?.data?.message || err.message));
-} finally {
-    setUploading(false);
-}
+    try {
+        setUploading(true);
+        await api.post('/notes', formDataToSend, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        alert("Upload Successful!");
+        onBack();
+    } catch (err) {
+        alert("Upload Failed: " + (err.response?.data?.message || err.message));
+    } finally {
+        setUploading(false);
+    }
   };
 
   return (
