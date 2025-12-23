@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, FileText, Download, PlusCircle, Check } from 'lucide-react';
+import { ChevronLeft, FileText, Download, PlusCircle, Check, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import api from '../services/api';
 
 export const NotesListView = ({ subject, onBack }) => {
   const [notes, setNotes] = useState([]);
   const [addedIds, setAddedIds] = useState([]); // Track added items for UI feedback
+  const [togglingIds, setTogglingIds] = useState([]); // Track likes in progress
+  
+  const isLoggedIn = !!localStorage.getItem('token');
 
   useEffect(() => {
     const fetchNotes = async () => {
@@ -40,8 +43,64 @@ export const NotesListView = ({ subject, onBack }) => {
       localStorage.setItem('myDeskItems', JSON.stringify([...items, newItem]));
       
       // 4. UI Feedback
-      setAddedIds([...addedIds, note._id]);
+      setAddedIds([...addedIds, note._id || note.id]);
       alert(`"${note.title}" added to My Desk!`);
+  };
+
+  const toggleLike = async (note) => {
+      if (!isLoggedIn) {
+          alert('Please login to like notes.');
+          return;
+      }
+
+      const id = note._id || note.id;
+      if (!id) {
+          alert('Unable to identify note.');
+          return;
+      }
+
+      if (togglingIds.includes(id)) return; // already toggling
+      setTogglingIds(prev => [...prev, id]);
+
+      try {
+          console.log('toggleLike: sending request', { url: `/notes/${id}/like`, tokenPresent: !!localStorage.getItem('token') });
+          const res = await api.post(`/notes/${id}/like`);
+          const { likes, dislikes, liked } = res.data;
+          setNotes(prev => prev.map(n => (n._id || n.id) === id ? { ...n, likes, dislikes, liked, disliked: false } : n));
+      } catch (err) {
+          console.error('Failed to toggle like', err);
+          alert(err.response?.data?.message || 'Failed to toggle like. Try again.');
+      } finally {
+          setTogglingIds(prev => prev.filter(x => x !== id));
+      }
+  };
+
+  const toggleDislike = async (note) => {
+      if (!isLoggedIn) {
+          alert('Please login to dislike notes.');
+          return;
+      }
+
+      const id = note._id || note.id;
+      if (!id) {
+          alert('Unable to identify note.');
+          return;
+      }
+
+      if (togglingIds.includes(id)) return; // already toggling
+      setTogglingIds(prev => [...prev, id]);
+
+      try {
+          console.log('toggleDislike: sending request', { url: `/notes/${id}/dislike`, tokenPresent: !!localStorage.getItem('token') });
+          const res = await api.post(`/notes/${id}/dislike`);
+          const { likes, dislikes, disliked } = res.data;
+          setNotes(prev => prev.map(n => (n._id || n.id) === id ? { ...n, likes, dislikes, disliked, liked: false } : n));
+      } catch (err) {
+          console.error('Failed to toggle dislike', err);
+          alert(err.response?.data?.message || 'Failed to toggle dislike. Try again.');
+      } finally {
+          setTogglingIds(prev => prev.filter(x => x !== id));
+      }
   };
 
   return (
@@ -71,9 +130,29 @@ export const NotesListView = ({ subject, onBack }) => {
                     <div>
                         <h4 className="font-medium group-hover:text-indigo-300 transition-colors">{note.title}</h4>
                         <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                            <span>By {note.authorName || note.author || 'Unknown'}</span>
+                            <span>By {note.authorName || note.author || (note.uploadedBy && (note.uploadedBy.fullName || note.uploadedBy.username)) || 'Unknown'}</span>
                             <span className="w-1 h-1 rounded-full bg-slate-600" />
-                            <span>{note.likes || 0} Likes</span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => toggleLike(note)}
+                                    disabled={!isLoggedIn || togglingIds.includes(note._id || note.id)}
+                                    className={`flex items-center gap-2 text-xs ${note.liked ? 'text-emerald-400' : 'text-slate-400'} hover:text-emerald-300 transition-colors`}
+                                    title={note.liked ? 'Remove like' : 'Like'}
+                                >
+                                    <ThumbsUp size={14} className={note.liked ? 'text-emerald-400' : 'text-slate-400'} />
+                                    <span>{note.likes || 0}</span>
+                                </button>
+
+                                <button
+                                    onClick={() => toggleDislike(note)}
+                                    disabled={!isLoggedIn || togglingIds.includes(note._id || note.id)}
+                                    className={`flex items-center gap-2 text-xs ${note.disliked ? 'text-rose-400' : 'text-slate-400'} hover:text-rose-300 transition-colors`}
+                                    title={note.disliked ? 'Remove dislike' : 'Dislike'}
+                                >
+                                    <ThumbsDown size={14} className={note.disliked ? 'text-rose-400' : 'text-slate-400'} />
+                                    <span>{note.dislikes || 0}</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -82,10 +161,10 @@ export const NotesListView = ({ subject, onBack }) => {
                     {/* Add to Desk Button */}
                     <button 
                         onClick={() => addToMyDesk(note)}
-                        className={`p-2 rounded-lg transition-colors border ${addedIds.includes(note._id) ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-700/50 text-slate-400 border-transparent hover:bg-indigo-500/20 hover:text-indigo-300'}`}
+                        className={`p-2 rounded-lg transition-colors border ${addedIds.includes(note._id || note.id) ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-700/50 text-slate-400 border-transparent hover:bg-indigo-500/20 hover:text-indigo-300'}`}
                         title="Add to My Desk"
                     >
-                        {addedIds.includes(note._id) ? <Check size={18} /> : <PlusCircle size={18} />}
+                        {addedIds.includes(note._id || note.id) ? <Check size={18} /> : <PlusCircle size={18} />}
                     </button>
 
                     {/* Download Button */}

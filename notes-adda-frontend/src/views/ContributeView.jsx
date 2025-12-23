@@ -22,8 +22,14 @@ export const ContributeView = ({ onBack, branches, subjectsData, setSubjectsData
 
   const handleUpload = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Please login to contribute notes.');
+        return;
+    }
+
     const formDataToSend = new FormData();
-formDataToSend.append('file', file);
+    formDataToSend.append('file', file);
 formDataToSend.append('title', formData.title);
 formDataToSend.append('branch', formData.branch);
 formDataToSend.append('semester', formData.semester);

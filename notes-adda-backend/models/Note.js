@@ -9,7 +9,9 @@ const NoteSchema = new mongoose.Schema({
     fileType: { type: String, enum: ['pdf', 'img'], default: 'pdf' },
     uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     authorName: { type: String },
-    likes: { type: Number, default: 0 }
+    likes: { type: Number, default: 0 },
+    likesBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    dislikesBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
 // Create text index for search
