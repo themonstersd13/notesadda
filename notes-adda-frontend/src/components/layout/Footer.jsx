@@ -31,7 +31,7 @@ export const Footer = () => {
   };
 
   return (
-    <footer className="bg-gradient-to-tr from-slate-800/90 to-slate-900/95 text-slate-300 border-t border-slate-800/40 font-sans">
+    <footer className="bg-slate-50 dark:bg-gradient-to-tr dark:from-slate-800/90 dark:to-slate-900/95 text-slate-700 dark:text-slate-300 border-t border-slate-100 dark:border-slate-800/40 font-sans">
       <div className="container mx-auto px-6 pt-10 pb-4">
         {/* Main Content Section */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-10">
@@ -60,7 +60,7 @@ export const Footer = () => {
             <ul className="space-y-2 text-[13px]">
               <li><a href="#" className="hover:text-indigo-400 transition-colors">Home</a></li>
               <li><a href="#" className="hover:text-indigo-400 transition-colors">About</a></li>
-              <li><a href="#" className="hover:text-indigo-400 transition-colors">My Notes</a></li>
+              <li><a href="branches" className="hover:text-indigo-400 transition-colors">My Notes</a></li>
             </ul>
           </div>
 
@@ -87,7 +87,7 @@ export const Footer = () => {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Suggest an improvement..."
-                className="w-full bg-slate-900/80 border border-slate-800 rounded p-3 text-sm text-slate-100 focus:border-indigo-500 outline-none transition-all h-20 resize-none"
+                className="w-full bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded p-3 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:border-indigo-500 outline-none transition-all h-20 resize-none shadow-sm"
               />
               <button
                 type="submit"
@@ -106,7 +106,7 @@ export const Footer = () => {
         </div>
 
         {/* Bottom Bar - Minimalist */}
-        <div className="pt-4 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-3">
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-900 flex flex-col md:flex-row justify-between items-center gap-3">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-[11px] text-slate-600">
             <span>© {new Date().getFullYear()} NotesAdda</span>
             <a href="#" className="hover:text-slate-400 transition-colors">Privacy</a>

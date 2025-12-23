@@ -56,6 +56,17 @@ export default function App() {
     if (token && userStr) {
         setUser({ ...JSON.parse(userStr), loggedIn: true });
     }
+
+    // Hash-based navigation (e.g., footer links)
+    const applyHash = () => {
+      const h = window.location.hash.replace('#', '');
+      if (h) setView(h);
+    };
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
+    return () => {
+      window.removeEventListener('hashchange', applyHash);
+    };
   }, []);
 
   // --- HANDLERS ---
@@ -79,7 +90,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans selection:bg-indigo-500/30">
       <BackgroundEffects />
 
       <Navbar 

@@ -26,15 +26,15 @@ export const HomeView = ({ branchName, onSelectYear, navigateTo, onBack }) => {
           <div 
             key={year}
             onClick={() => onSelectYear(year)}
-            className="group cursor-pointer relative p-8 rounded-3xl bg-slate-900/50 border border-white/5 hover:border-indigo-500/50 transition-all duration-500 hover:-translate-y-2 overflow-hidden"
+            className="group cursor-pointer relative p-8 rounded-3xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 hover:border-indigo-500/50 transition-all duration-500 hover:-translate-y-2 overflow-hidden shadow-sm hover:shadow-md"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <h3 className="text-2xl font-bold mb-2 relative z-10">{year}</h3>
-            <p className="text-slate-500 text-sm relative z-10 group-hover:text-indigo-200 transition-colors">
+            <p className="text-slate-500 dark:text-slate-400 text-sm relative z-10 group-hover:text-indigo-700 dark:group-hover:text-indigo-200 transition-colors">
               Access semesters & subjects
             </p>
             <div className="mt-8 flex justify-end">
-              <div className="w-10 h-10 rounded-full bg-slate-800 group-hover:bg-indigo-500 flex items-center justify-center transition-colors">
+              <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-indigo-500 flex items-center justify-center transition-colors">
                 <ChevronRight size={20} className="text-white" />
               </div>
             </div>

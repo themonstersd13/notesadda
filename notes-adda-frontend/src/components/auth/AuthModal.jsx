@@ -39,7 +39,7 @@ export const AuthModal = ({ onClose, onLogin }) => {
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <Card className="w-full max-w-md bg-slate-900 shadow-2xl border-indigo-500/30 relative">
+            <Card className="w-full max-w-md bg-white dark:bg-slate-900 shadow-lg border-indigo-500/30 relative">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold">{isRegister ? 'Create Account' : 'Welcome Back'}</h2>
                     <button onClick={onClose} className="text-slate-400 hover:text-white"><X /></button>

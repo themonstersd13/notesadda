@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, LogOut, ChevronRight, BookOpen } from 'lucide-react';
+import { Search, LogOut, ChevronRight, BookOpen, GraduationCap, Sun, Moon } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { BRANCHES } from '../../data/mockData';
 
@@ -13,6 +13,33 @@ export const Navbar = ({ user, setView, onLoginClick, onLogout, subjectsData, on
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Theme (light / dark)
+  const [theme, setTheme] = useState(() => {
+    try {
+      const t = localStorage.getItem('theme');
+      if (t) return t;
+      if (typeof window !== 'undefined' && window.matchMedia) {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      return 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('theme', theme);
+    } catch (e) {
+      // ignore
+    }
+  }, [theme]);
 
   // --- DYNAMIC SEARCH LOGIC ---
   useEffect(() => {
@@ -58,21 +85,27 @@ export const Navbar = ({ user, setView, onLoginClick, onLogout, subjectsData, on
   };
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 border-b ${isScrolled ? 'bg-slate-950/80 backdrop-blur-xl border-white/10 py-3' : 'bg-transparent border-transparent py-5'}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 border-b ${isScrolled ? 'bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl dark:border-white/10 py-3 shadow-sm' : 'bg-transparent border-transparent py-5'}`}>
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div 
           className="flex items-center gap-2 cursor-pointer" 
           onClick={() => setView('branches')}
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold">
-            N
+          <div className="p-1.5 rounded bg-indigo-600 flex items-center justify-center">
+            <GraduationCap size={18} className="text-white" />
           </div>
-          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-            NotesAdda <span className="text-xs text-slate-500 font-normal">v2.1</span>
-          </span>
+          <span className="text-lg font-bold text-slate-900 dark:text-white ml-2 tracking-tight">NotesAdda <span className="text-xs text-slate-400 dark:text-slate-400 font-normal ml-2">v2.1</span></span>
         </div>
 
+
+
         <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4 mr-2">
+            <button onClick={() => setView('home')} className="text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">Home</button>
+            <button onClick={() => setView('about')} className="text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">About</button>
+            <button onClick={() => setView('branches')} className="text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">My Notes</button>
+          </div>
+
           <div className="hidden md:block relative z-50">
              <div className="relative">
                  <input 
@@ -80,31 +113,42 @@ export const Navbar = ({ user, setView, onLoginClick, onLogout, subjectsData, on
                     placeholder="Search branches, subjects..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="bg-slate-900/50 border border-slate-700 rounded-full pl-10 pr-4 py-1.5 text-sm w-48 focus:w-80 transition-all focus:border-indigo-500 focus:outline-none focus:bg-slate-900" 
+                    className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-full pl-10 pr-4 py-1.5 text-sm w-48 focus:w-80 transition-all focus:border-indigo-500 focus:outline-none dark:focus:bg-slate-900" 
                  />
                  <Search size={14} className="absolute left-3.5 top-2.5 text-slate-500" />
              </div>
 
              {/* SEARCH DROPDOWN */}
              {searchResults.length > 0 && (
-                 <div className="absolute top-full mt-2 left-0 right-0 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+                 <div className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
                      {searchResults.map((res, idx) => (
                          <div 
                             key={idx} 
                             onClick={() => handleResultClick(res)}
-                            className="p-3 hover:bg-slate-800 cursor-pointer border-b border-slate-800 last:border-0 flex items-center gap-3"
+                            className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-200 dark:border-slate-800 last:border-0 flex items-center gap-3"
                          >
                              <div className={`p-2 rounded-lg ${res.type === 'Branch' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                                  {res.type === 'Branch' ? <ChevronRight size={14} /> : <BookOpen size={14} />}
                              </div>
                              <div>
-                                 <p className="text-sm font-medium text-slate-200">{res.title}</p>
-                                 {res.subtitle && <p className="text-xs text-slate-500">{res.subtitle}</p>}
+                                 <p className="text-sm font-medium text-slate-900 dark:text-slate-200">{res.title}</p>
+                                 {res.subtitle && <p className="text-xs text-slate-500 dark:text-slate-400">{res.subtitle}</p>}
                              </div>
                          </div>
                      ))}
                  </div>
              )}
+          </div>
+
+          {/* Theme Toggle */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-2 rounded-full hover:bg-white/6 transition-colors"
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? <Sun size={16} className="text-slate-300" /> : <Moon size={16} className="text-slate-700" />}
+            </button>
           </div>
 
           {user.loggedIn ? (

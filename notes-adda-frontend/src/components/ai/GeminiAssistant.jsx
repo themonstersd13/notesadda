@@ -45,7 +45,7 @@ export const GeminiAssistant = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed bottom-24 right-8 w-80 md:w-96 bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-2xl shadow-emerald-900/20 overflow-hidden z-50 flex flex-col animate-in slide-in-from-bottom-10 fade-in duration-300 flex flex-col h-[500px]">
+    <div className="fixed bottom-24 right-8 w-80 md:w-96 bg-white dark:bg-slate-900 border border-emerald-500/30 rounded-2xl shadow-lg overflow-hidden z-50 flex flex-col animate-in slide-in-from-bottom-10 fade-in duration-300 flex flex-col h-[500px]">
         
         {/* Header */}
         <div className="bg-emerald-900/20 p-4 border-b border-white/5 flex justify-between items-center backdrop-blur-md">
