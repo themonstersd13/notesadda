@@ -17,6 +17,8 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/notes', require('./routes/notes'));
 app.use('/api/subjects', require('./routes/subjects'));
 app.use('/api/ai', require('./routes/ai'));
+// Feedback
+app.use('/api/feedback', require('./routes/feedback'));
 
 const PORT = process.env.PORT || 5000;
 

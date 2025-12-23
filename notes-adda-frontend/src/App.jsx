@@ -4,6 +4,7 @@ import api from './services/api';
 
 // Components
 import { Navbar } from './components/layout/Navbar';
+import { Footer } from './components/layout/Footer';
 import { BackgroundEffects } from './components/layout/BackgroundEffects';
 import { AuthModal } from './components/auth/AuthModal';
 import { GeminiAssistant } from './components/ai/GeminiAssistant';
@@ -147,6 +148,8 @@ export default function App() {
           />
         )}
       </main>
+
+      <Footer />
 
       {/* Floating Action Buttons */}
       <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-4">
