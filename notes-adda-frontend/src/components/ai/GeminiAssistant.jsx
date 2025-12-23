@@ -2,10 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Sparkles, ChevronRight, AlertCircle } from 'lucide-react';
 import api from '../../services/api';
 
-export const GeminiAssistant = ({ onClose }) => {
+export const GeminiAssistant = ({ onClose, context }) => {
   const [query, setQuery] = useState("");
+  // Initial greeting is context-aware if possible
+  const getGreeting = () => {
+      if (context && context.subject) {
+          return `Hi! I see you're studying ${context.subject}. Ask me to explain a concept, find formulas, or summarize this subject!`;
+      }
+      return "Hi! I'm your engineering study assistant. Ask me to summarize a topic, explain a concept, or find resources!";
+  };
+
   const [messages, setMessages] = useState([
-    { role: 'ai', text: "Hi! I'm your engineering study assistant. Ask me to summarize a topic, explain a concept, or find resources!" }
+    { role: 'ai', text: getGreeting() }
   ]);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
@@ -23,8 +31,23 @@ export const GeminiAssistant = ({ onClose }) => {
     setQuery("");
     setLoading(true);
 
+    // --- CONSTRUCT CONTEXTUAL PROMPT ---
+    let finalPrompt = userText;
+    
+    // If we have context (Branch/Subject), inject it silently into the query sent to AI
+    if (context) {
+        let contextString = "Context: Student";
+        if (context.branch) contextString += ` in ${context.branch} Engineering`;
+        if (context.semester) contextString += `, ${context.semester}`;
+        if (context.subject) contextString += `, currently studying "${context.subject}"`;
+        contextString += ".";
+        
+        // This effectively tells Gemini: "Student is in CSE Sem 5 studying DBMS. Question: What is 3NF?"
+        finalPrompt = `${contextString}\n\nTask: Answer the following question concisely and relevant to the context above.\n\nQuestion: ${userText}`;
+    }
+
     try {
-        const res = await api.post('/ai/ask', { query: userText });
+        const res = await api.post('/ai/ask', { query: finalPrompt });
         setMessages(prev => [...prev, { role: 'ai', text: res.data.answer }]);
     } catch (err) {
         setMessages(prev => [...prev, { role: 'error', text: "I'm having trouble connecting to the AI brain right now." }]);
@@ -77,7 +100,7 @@ export const GeminiAssistant = ({ onClose }) => {
             <div className="flex gap-2 relative">
                 <input 
                     className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-900 dark:text-white placeholder-slate-500 transition-all"
-                    placeholder="Ask about your syllabus..."
+                    placeholder={context && context.subject ? `Ask about ${context.subject}...` : "Ask a question..."}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && !loading && handleSend()}

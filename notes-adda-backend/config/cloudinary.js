@@ -11,20 +11,28 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: async (req, file) => {
-        // Determine resource type based on file mimetype
-        const isPdf = file.mimetype === 'application/pdf';
-        
-        return {
-            folder: 'notes-adda',
-            // CRITICAL FIX: explicit public access
-            access_mode: 'public', 
-            // PDFs usually work better as 'raw' or 'image' depending on use case. 
-            // 'auto' is safest, but sometimes defaults to private.
-            resource_type: 'auto', 
-            allowed_formats: ['pdf'],
-            // Use original filename or unique ID
-            public_id: file.originalname.split('.')[0] + '-' + Date.now()
-        };
+        // Clean up the filename
+        const fileName = file.originalname.split('.')[0].replace(/\s+/g, '_') + '-' + Date.now();
+
+        // CHECK IF PDF
+        if (file.mimetype === 'application/pdf') {
+            return {
+                folder: 'notes-adda',
+                resource_type: 'auto',
+                format: 'pdf', // Force PDF format
+                public_id: fileName, 
+                access_mode: 'public'
+            };
+        } else {
+            // IMAGES
+            return {
+                folder: 'notes-adda',
+                resource_type: 'image',
+                // Remove 'allowed_formats' to accept all common images (jpg, png, webp, etc.)
+                public_id: fileName,
+                access_mode: 'public'
+            };
+        }
     },
 });
 

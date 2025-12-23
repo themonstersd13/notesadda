@@ -17,6 +17,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/notes', require('./routes/notes'));
 app.use('/api/subjects', require('./routes/subjects'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/profile', require('./routes/profile'));
 // Feedback
 app.use('/api/feedback', require('./routes/feedback'));
 

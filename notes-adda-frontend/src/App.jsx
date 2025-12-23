@@ -18,9 +18,10 @@ import { NotesListView } from './views/NotesListView';
 import { ContributeView } from './views/ContributeView';
 import { MyNotesWorkspace } from './views/MyNotesWorkspace';
 import { AboutView } from './views/AboutView';
-import { PrivacyView } from './views/PrivacyView'; // <-- NEW
-import { TermsView } from './views/TermsView';     // <-- NEW
-import { SupportView } from './views/SupportView'; // <-- NEW
+import { PrivacyView } from './views/PrivacyView';
+import { TermsView } from './views/TermsView';
+import { SupportView } from './views/SupportView';
+import { ProfileView } from './views/ProfileView'; 
 
 // Data
 import { BRANCHES, INITIAL_SUBJECTS_DATA } from './data/mockData';
@@ -85,6 +86,9 @@ export default function App() {
     }
   };
 
+  // Helper to get readable branch name
+  const currentBranchName = BRANCHES.find(b => b.id === selectedBranch)?.name;
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans selection:bg-indigo-500/30 flex flex-col">
       <BackgroundEffects />
@@ -110,7 +114,7 @@ export default function App() {
 
         {view === 'home' && selectedBranch && (
           <HomeView 
-            branchName={BRANCHES.find(b => b.id === selectedBranch)?.name}
+            branchName={currentBranchName}
             onSelectYear={(year) => { setSelectedYear(year); setView('semester'); }}
             navigateTo={(v) => setView(v)}
             onBack={() => setView('branches')}
@@ -159,14 +163,10 @@ export default function App() {
           />
         )}
 
-        {view === 'about' && (
-            <AboutView 
-                onBack={() => setView('branches')} 
-                onGetStarted={() => setView('branches')} 
-            />
+        {view === 'about' && <AboutView onBack={() => setView('branches')} onGetStarted={() => setView('branches')} />}
+          {view === 'profile' && (
+            <ProfileView onBack={() => setView('branches')} />
         )}
-
-        {/* --- NEW FOOTER PAGES --- */}
         {view === 'privacy' && <PrivacyView onBack={() => setView('branches')} />}
         {view === 'terms' && <TermsView onBack={() => setView('branches')} />}
         {view === 'support' && <SupportView onBack={() => setView('branches')} />}
@@ -189,7 +189,17 @@ export default function App() {
         </button>
       </div>
 
-      {isGeminiOpen && <GeminiAssistant onClose={() => setIsGeminiOpen(false)} />}
+      {isGeminiOpen && (
+        <GeminiAssistant 
+            onClose={() => setIsGeminiOpen(false)} 
+            // Pass the current navigation context to the AI
+            context={{
+                branch: currentBranchName,
+                semester: selectedSemester,
+                subject: selectedSubject
+            }}
+        />
+      )}
       
       {isLoginOpen && (
         <AuthModal 

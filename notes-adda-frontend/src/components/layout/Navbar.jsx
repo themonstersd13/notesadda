@@ -156,9 +156,20 @@ export const Navbar = ({ user, setView, onLoginClick, onLogout, subjectsData, on
 
           {user.loggedIn ? (
             <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 hidden md:inline">
-                    {user.name} {user.role === 'admin' && <span className="text-rose-500 text-[10px] font-bold border border-rose-500/30 px-1 rounded ml-1 bg-rose-500/10">ADMIN</span>}
-                </span>
+                <button 
+                    onClick={() => setView('profile')} 
+                    className="flex items-center gap-2 group hover:bg-slate-100 dark:hover:bg-slate-800 py-1 px-3 rounded-full transition-all"
+                >
+                    {/* Placeholder Avatar or User Initial */}
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold">
+                        {user.name.charAt(0)}
+                    </div>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 hidden md:inline group-hover:text-indigo-600 dark:group-hover:text-white transition-colors">
+                        {user.name}
+                    </span>
+                    {user.role === 'admin' && <span className="text-rose-500 text-[10px] font-bold border border-rose-500/30 px-1 rounded bg-rose-500/10">ADMIN</span>}
+                </button>
+                
                 <button onClick={onLogout} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors" title="Logout">
                     <LogOut size={18} className="text-slate-500 dark:text-slate-400" />
                 </button>
