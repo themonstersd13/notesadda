@@ -1,5 +1,6 @@
 const Note = require('../models/Note');
 const Subject = require('../models/Subject');
+const { cloudinary } = require('../config/cloudinary');
 
 exports.uploadNote = async (req, res) => {
     try {
@@ -162,6 +163,33 @@ exports.deleteNote = async (req, res) => {
     try {
         const note = await Note.findById(req.params.id);
         if (!note) return res.status(404).json({ message: "Note not found" });
+
+        // Try deleting the file/resource from Cloudinary (if it was uploaded there)
+        try {
+            const fileUrl = note.fileUrl;
+            if (fileUrl && fileUrl.includes('res.cloudinary.com')) {
+                const extractPublicId = (url) => {
+                    const uploadIndex = url.indexOf('/upload/');
+                    if (uploadIndex === -1) return null;
+                    let rest = url.substring(uploadIndex + '/upload/'.length);
+                    // Remove version segment like v123456/
+                    rest = rest.replace(/v[0-9]+\//, '');
+                    // Trim file extension
+                    const lastDot = rest.lastIndexOf('.');
+                    if (lastDot !== -1) rest = rest.substring(0, lastDot);
+                    return rest;
+                };
+
+                const publicId = extractPublicId(fileUrl);
+                if (publicId) {
+                    const resource_type = (note.fileType === 'pdf') ? 'raw' : 'image';
+                    await cloudinary.uploader.destroy(publicId, { resource_type });
+                }
+            }
+        } catch (cloudErr) {
+            console.error('Cloudinary delete failed:', cloudErr);
+            // Continue to delete DB record even if cloud delete fails
+        }
 
         await Note.findByIdAndDelete(req.params.id);
         res.json({ message: "Note deleted successfully" });

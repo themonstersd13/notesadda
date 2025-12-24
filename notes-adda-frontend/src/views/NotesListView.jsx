@@ -1,14 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, FileText, Download, PlusCircle, Check, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ChevronLeft, FileText, Download, PlusCircle, Check, ThumbsUp, ThumbsDown, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import api from '../services/api';
 
-export const NotesListView = ({ subject, onBack }) => {
+export const NotesListView = ({ subject, onBack, user }) => {
   const [notes, setNotes] = useState([]);
   const [addedIds, setAddedIds] = useState([]); // Track added items for UI feedback
   const [togglingIds, setTogglingIds] = useState([]); // Track likes in progress
   
   const isLoggedIn = !!localStorage.getItem('token');
+  const isAdmin = user?.role === 'admin' || JSON.parse(localStorage.getItem('user') || 'null')?.role === 'admin';
+
+  const handleDelete = async (note) => {
+      if (!window.confirm(`Delete "${note.title}"? This action cannot be undone.`)) return;
+      const id = note._id || note.id;
+      if (!id) return alert('Invalid note id');
+      try {
+          await api.delete(`/notes/${id}`);
+          setNotes(prev => prev.filter(n => (n._id || n.id) !== id));
+          alert('Note deleted');
+      } catch (err) {
+          console.error('Delete failed', err);
+          alert(err.response?.data?.message || 'Failed to delete note');
+      }
+  };
 
   useEffect(() => {
     const fetchNotes = async () => {
@@ -178,6 +193,18 @@ export const NotesListView = ({ subject, onBack }) => {
                             <Download size={14} />
                         </Button>
                     </a>
+
+                    {isAdmin && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleDelete(note); }}
+                            title="Delete Note"
+                            className="ml-2"
+                        >
+                            <Button variant="ghost" className="!px-2 !py-1.5 text-rose-400">
+                                <Trash2 size={16} />
+                            </Button>
+                        </button>
+                    )}
                 </div>
             </div>
             ))

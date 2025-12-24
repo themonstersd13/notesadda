@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom'; // Import Hooks
 import { 
-    User, Mail, Linkedin, Calendar, Camera, ChevronLeft, Award, ThumbsUp, FileText 
+    User, Mail, Linkedin, Calendar, Camera, ChevronLeft, Award, ThumbsUp, FileText, Trash2 
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -23,6 +23,9 @@ export const ProfileView = ({ onBack }) => {
         linkedin: '',
         contactEmail: ''
     });
+
+    const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+    const isAdminUser = currentUser?.role === 'admin';
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -245,6 +248,26 @@ export const ProfileView = ({ onBack }) => {
                                         >
                                             View
                                         </a>
+
+                                        {(isOwner || isAdminUser) && (
+                                            <button
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    if (!window.confirm(`Delete "${note.title}"? This cannot be undone.`)) return;
+                                                    try {
+                                                        await api.delete(`/notes/${note._id}`);
+                                                        setData(prev => ({ ...prev, stats: { ...prev.stats, uploads: prev.stats.uploads.filter(u => u._id !== note._id) } }));
+                                                        alert('Deleted');
+                                                    } catch (err) {
+                                                        console.error('Delete failed', err);
+                                                        alert(err.response?.data?.message || 'Failed to delete');
+                                                    }
+                                                }}
+                                                className="text-rose-500 hover:text-rose-600 text-xs font-medium flex items-center gap-2"
+                                            >
+                                                <Trash2 size={14} /> Delete
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ))
