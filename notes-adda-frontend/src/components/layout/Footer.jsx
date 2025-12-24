@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Mail, GraduationCap } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom'; // Import Router hooks
 import api from '../../services/api';
 
 export const Footer = () => {
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const submitFeedback = async (e) => {
     e.preventDefault();
@@ -55,9 +57,9 @@ export const Footer = () => {
           <div className="md:col-span-2">
             <h4 className="text-slate-900 dark:text-white font-semibold mb-4 text-xs uppercase tracking-widest">Quick Links</h4>
             <ul className="space-y-2 text-[13px]">
-              <li><button onClick={() => window.location.hash = '#home'} className="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">Home</button></li>
-              <li><button onClick={() => window.location.hash = '#about'} className="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">About</button></li>
-              <li><button onClick={() => window.location.hash = '#mynotes'} className="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">My Desk</button></li>
+              <li><Link to="/" className="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">Home</Link></li>
+              <li><Link to="/about" className="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">About</Link></li>
+              <li><Link to="/mynotes" className="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">My Desk</Link></li>
             </ul>
           </div>
 
@@ -106,9 +108,9 @@ export const Footer = () => {
         <div className="pt-4 border-t border-slate-200 dark:border-slate-800/60 flex flex-col md:flex-row justify-between items-center gap-3">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
             <span>© {new Date().getFullYear()} NotesAdda</span>
-            <a href="#privacy" className="hover:text-indigo-500 transition-colors">Privacy</a>
-            <a href="#terms" className="hover:text-indigo-500 transition-colors">Terms</a>
-            <a href="#support" className="hover:text-indigo-500 transition-colors">Support</a>
+            <Link to="/privacy" className="hover:text-indigo-500 transition-colors">Privacy</Link>
+            <Link to="/terms" className="hover:text-indigo-500 transition-colors">Terms</Link>
+            <Link to="/support" className="hover:text-indigo-500 transition-colors">Support</Link>
           </div>
           
           <div className="flex items-center gap-3 text-[10px] font-mono text-slate-500 dark:text-slate-400">
