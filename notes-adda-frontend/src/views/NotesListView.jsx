@@ -137,17 +137,17 @@ export const NotesListView = ({ subject, onBack, user }) => {
             </div>
         ) : (
             notes.map((note) => (
-            <div key={note._id || note.id} className="group p-4 rounded-xl bg-slate-800/40 border border-white/5 hover:border-indigo-500/30 transition-all flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${note.fileType === 'pdf' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'}`}>
+            <div key={note._id || note.id} className="group p-4 rounded-xl bg-slate-800/40 border border-white/5 hover:border-indigo-500/30 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                <div className="flex items-start sm:items-center gap-4 flex-1">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${note.fileType === 'pdf' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'}`}>
                         <FileText size={20} />
                     </div>
-                    <div>
-                        <h4 className="font-medium group-hover:text-indigo-300 transition-colors">{note.title}</h4>
-                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                            <span>By {note.authorName || note.author || (note.uploadedBy && (note.uploadedBy.fullName || note.uploadedBy.username)) || 'Unknown'}</span>
+                    <div className="min-w-0">
+                        <h4 className="font-medium group-hover:text-indigo-300 transition-colors truncate">{note.title}</h4>
+                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 flex-wrap">
+                            <span className="truncate">By {note.authorName || note.author || (note.uploadedBy && (note.uploadedBy.fullName || note.uploadedBy.username)) || 'Unknown'}</span>
                             <span className="w-1 h-1 rounded-full bg-slate-600" />
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mt-1 sm:mt-0">
                                 <button
                                     onClick={() => toggleLike(note)}
                                     disabled={!isLoggedIn || togglingIds.includes(note._id || note.id)}
@@ -172,7 +172,7 @@ export const NotesListView = ({ subject, onBack, user }) => {
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mt-3 sm:mt-0">
                     {/* Add to Desk Button */}
                     <button 
                         onClick={() => addToMyDesk(note)}

@@ -235,7 +235,7 @@ export const ProfileView = ({ onBack }) => {
                                         </div>
                                     </div>
                                     
-                                    <div className="flex items-center gap-4">
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                                         <div className="flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded">
                                             <ThumbsUp size={12} />
                                             {note.likes || 0}

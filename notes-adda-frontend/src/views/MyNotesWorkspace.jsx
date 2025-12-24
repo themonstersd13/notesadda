@@ -134,7 +134,7 @@ const newItem = { id: Date.now().toString(), noteId: res.data._id, title: upload
       )}
       
       {/* Grid Display */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 min-h-[300px] content-start">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 min-h-[300px] content-start">
         {visibleItems.map((item) => (
           <div
             key={item.id}
