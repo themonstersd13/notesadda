@@ -4,13 +4,21 @@ const connectDB = require('./config/db');
 const cors = require('cors');
 
 const app = express();
-
-// Connect Database
-connectDB();
-
-// Middleware
 app.use(cors('https://notesadda.vercel.app/')); // Allow Frontend
 app.use(express.json());
+
+// Connect Database
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        console.error("Database connection failed:", err);
+        res.status(500).json({ error: "Database connection failed", details: err.message });
+    }
+});
+
+// Middleware
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
