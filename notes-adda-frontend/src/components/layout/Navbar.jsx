@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, LogOut, ChevronRight, BookOpen, GraduationCap, Sun, Moon, Upload } from 'lucide-react';
+import { Search, LogOut, ChevronRight, BookOpen, GraduationCap, Sun, Moon, Upload, Menu, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useNavigate, Link } from 'react-router-dom'; // Import Router hooks
 import { BRANCHES } from '../../data/mockData';
@@ -8,7 +8,8 @@ export const Navbar = ({ user, onLoginClick, onLogout, subjectsData, onSearchSel
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const navigate = useNavigate(); // Hook for navigation
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // Mobile menu state
+  const navigate = useNavigate();
 
   // Theme (light / dark)
   const [theme, setTheme] = useState(() => {
@@ -57,7 +58,8 @@ export const Navbar = ({ user, onLoginClick, onLogout, subjectsData, onSearchSel
   const handleResultClick = (result) => {
     setSearchTerm("");
     setSearchResults([]);
-    onSearchSelect(result); // This is handled in App.jsx now
+    setIsMenuOpen(false); // Close mobile menu if open
+    onSearchSelect(result); 
   };
 
   return (
@@ -65,7 +67,7 @@ export const Navbar = ({ user, onLoginClick, onLogout, subjectsData, onSearchSel
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div 
           className="flex items-center gap-2 cursor-pointer group" 
-          onClick={() => navigate('/')} // Navigate Home
+          onClick={() => navigate('/')} 
         >
           <div className="p-1.5 rounded bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg group-hover:shadow-indigo-500/30 transition-shadow">
             <GraduationCap size={18} className="text-white" />
@@ -73,7 +75,8 @@ export const Navbar = ({ user, onLoginClick, onLogout, subjectsData, onSearchSel
           <span className="text-lg font-bold text-slate-900 dark:text-white ml-1 tracking-tight">NotesAdda <span className="text-xs text-slate-500 dark:text-slate-400 font-normal ml-1">v2.1</span></span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6 mr-2">
             <Link to="/" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors">Home</Link>
             <Link to="/about" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors">About</Link>
@@ -83,6 +86,7 @@ export const Navbar = ({ user, onLoginClick, onLogout, subjectsData, onSearchSel
             </Link>
           </div>
 
+          {/* Desktop Search */}
           <div className="hidden md:block relative z-50">
              <div className="relative">
                  <input 
@@ -94,7 +98,7 @@ export const Navbar = ({ user, onLoginClick, onLogout, subjectsData, onSearchSel
                  />
                  <Search size={14} className="absolute left-3.5 top-2.5 text-slate-500" />
              </div>
-             {/* Search Dropdown logic same as before */}
+             {/* Search Dropdown */}
              {searchResults.length > 0 && (
                  <div className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
                      {searchResults.map((res, idx) => (
@@ -123,6 +127,7 @@ export const Navbar = ({ user, onLoginClick, onLogout, subjectsData, onSearchSel
             </button>
           </div>
 
+          {/* User Profile / Login */}
           {user.loggedIn ? (
             <div className="flex items-center gap-3">
                 <button 
@@ -138,15 +143,82 @@ export const Navbar = ({ user, onLoginClick, onLogout, subjectsData, onSearchSel
                     {user.role === 'admin' && <span className="text-rose-500 text-[10px] font-bold border border-rose-500/30 px-1 rounded bg-rose-500/10">ADMIN</span>}
                 </button>
                 
-                <button onClick={onLogout} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors" title="Logout">
+                <button onClick={onLogout} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors hidden md:block" title="Logout">
                     <LogOut size={18} className="text-slate-500 dark:text-slate-400" />
                 </button>
             </div>
           ) : (
-             <Button variant="primary" onClick={onLoginClick} className="!px-4 !py-1.5 !text-sm">Login / Register</Button>
+             <Button variant="primary" onClick={onLoginClick} className="hidden md:flex !px-4 !py-1.5 !text-sm">Login / Register</Button>
           )}
+
+          {/* Mobile Menu Button */}
+          <button 
+            className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      {isMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 shadow-xl animate-in slide-in-from-top-2 z-40 flex flex-col gap-4">
+            
+            {/* Mobile Search */}
+            <div className="relative">
+                 <input 
+                    type="text" 
+                    placeholder="Search branches..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:focus:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500" 
+                 />
+                 <Search size={16} className="absolute left-3 top-2.5 text-slate-500" />
+                 
+                 {/* Mobile Search Results */}
+                 {searchResults.length > 0 && (
+                     <div className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50">
+                         {searchResults.map((res, idx) => (
+                             <div key={idx} onClick={() => handleResultClick(res)} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0 flex items-center gap-3">
+                                 <div className={`p-2 rounded-lg ${res.type === 'Branch' ? 'bg-indigo-500/10 text-indigo-500 dark:bg-indigo-500/20 dark:text-indigo-400' : 'bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/20 dark:text-emerald-400'}`}>
+                                     {res.type === 'Branch' ? <ChevronRight size={14} /> : <BookOpen size={14} />}
+                                 </div>
+                                 <div>
+                                     <p className="text-sm font-medium text-slate-900 dark:text-slate-200">{res.title}</p>
+                                     {res.subtitle && <p className="text-xs text-slate-500 dark:text-slate-400">{res.subtitle}</p>}
+                                 </div>
+                             </div>
+                         ))}
+                     </div>
+                 )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+                <Link to="/" onClick={() => setIsMenuOpen(false)} className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300">Home</Link>
+                <Link to="/about" onClick={() => setIsMenuOpen(false)} className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300">About</Link>
+                <Link to="/mynotes" onClick={() => setIsMenuOpen(false)} className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300">My Desk</Link>
+                <Link to="/upload" onClick={() => setIsMenuOpen(false)} className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                    <Upload size={16} /> Contribute
+                </Link>
+                
+                {!user.loggedIn && (
+                    <Button onClick={() => { setIsMenuOpen(false); onLoginClick(); }} className="w-full justify-center mt-2">
+                        Login / Register
+                    </Button>
+                )}
+                
+                {user.loggedIn && (
+                    <button 
+                        onClick={() => { setIsMenuOpen(false); onLogout(); }} 
+                        className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm font-medium text-red-500 flex items-center gap-2"
+                    >
+                        <LogOut size={16} /> Logout
+                    </button>
+                )}
+            </div>
+        </div>
+      )}
     </nav>
   );
 };
