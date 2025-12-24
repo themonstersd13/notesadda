@@ -21,7 +21,7 @@ export const MyNotesWorkspace = () => {
     } else {
       setItems([
         { id: '1', title: 'My Projects', type: 'folder', parentId: null, color: 'emerald' },
-        { id: '2', title: 'Calculus Notes', type: 'file', parentId: null, color: 'blue' }
+        // { id: '2', title: 'Calculus Notes', type: 'file', parentId: null, color: 'blue' }
       ]);
     }
   }, []);
