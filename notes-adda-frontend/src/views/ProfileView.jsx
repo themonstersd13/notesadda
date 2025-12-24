@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom'; // Import Hooks
 import { 
-    User, Mail, Linkedin, Calendar, Upload, Save, 
-    Award, ThumbsUp, FileText, Camera, ChevronLeft 
+    User, Mail, Linkedin, Calendar, Camera, ChevronLeft, Award, ThumbsUp, FileText 
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -9,11 +9,14 @@ import { Card } from '../components/ui/Card';
 import api from '../services/api';
 
 export const ProfileView = ({ onBack }) => {
+    const { username } = useParams(); // Get username from URL if present
+    const navigate = useNavigate();
+    
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [isOwner, setIsOwner] = useState(false); // Check if viewing own profile
     
-    // Form State
     const [formData, setFormData] = useState({
         bio: '',
         currentYear: 'First Year',
@@ -22,59 +25,80 @@ export const ProfileView = ({ onBack }) => {
     });
 
     useEffect(() => {
-        fetchProfile();
-    }, []);
+        const fetchProfile = async () => {
+            try {
+                let res;
+                // If username param exists, fetch public profile
+                if (username) {
+                    res = await api.get(`/profile/u/${username}`);
+                    
+                    // Check if the viewer is the owner
+                    const loggedInUser = JSON.parse(localStorage.getItem('user'));
+                    if (loggedInUser && loggedInUser.username === username) {
+                        setIsOwner(true);
+                    } else {
+                        setIsOwner(false);
+                    }
+                } else {
+                    // Else fetch 'me' (requires auth)
+                    res = await api.get('/profile/me');
+                    setIsOwner(true);
+                }
 
-    const fetchProfile = async () => {
-        try {
-            const res = await api.get('/profile/me');
-            setData(res.data);
-            setFormData({
-                bio: res.data.profile.bio || '',
-                currentYear: res.data.profile.currentYear || 'First Year',
-                linkedin: res.data.profile.linkedin || '',
-                contactEmail: res.data.profile.contactEmail || ''
-            });
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+                setData(res.data);
+                if (res.data.profile) {
+                    setFormData({
+                        bio: res.data.profile.bio || '',
+                        currentYear: res.data.profile.currentYear || 'First Year',
+                        linkedin: res.data.profile.linkedin || '',
+                        contactEmail: res.data.profile.contactEmail || ''
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+                if (!username) {
+                    // If failing on 'me', redirect to login or show msg
+                    navigate('/'); 
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProfile();
+    }, [username, navigate]);
 
     const handleSave = async () => {
         try {
             await api.put('/profile/me', formData);
             setIsEditing(false);
-            fetchProfile(); // Refresh
+            // Quick refresh data
+            setData(prev => ({ ...prev, profile: { ...prev.profile, ...formData } }));
         } catch (err) {
             alert('Failed to update profile');
         }
     };
 
     const handleAvatarUpload = async (e) => {
+        if (!isOwner) return;
         const file = e.target.files[0];
         if (!file) return;
 
-        const formData = new FormData();
-        formData.append('file', file);
+        const formDataPayload = new FormData();
+        formDataPayload.append('file', file);
 
         try {
-            // Optimistic update
             const objectUrl = URL.createObjectURL(file);
             setData(prev => ({ ...prev, profile: { ...prev.profile, profilePhoto: objectUrl } }));
-            
-            await api.post('/profile/avatar', formData, {
+            await api.post('/profile/avatar', formDataPayload, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            fetchProfile(); // Sync with real URL
         } catch (err) {
             alert('Photo upload failed');
         }
     };
 
     if (loading) return <div className="text-center py-20 text-slate-500">Loading Profile...</div>;
-    if (!data) return <div className="text-center py-20">Please log in to view your profile.</div>;
+    if (!data) return <div className="text-center py-20">User not found.</div>;
 
     const { user, profile, stats } = data;
 
@@ -84,13 +108,12 @@ export const ProfileView = ({ onBack }) => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
-                {/* LEFT COLUMN: ID Card Style */}
+                {/* LEFT COLUMN */}
                 <div className="lg:col-span-1 space-y-6">
                     <Card className="text-center relative overflow-hidden border-t-4 border-t-indigo-500">
-                        {/* Avatar */}
                         <div className="relative w-32 h-32 mx-auto mb-4 group">
                             <div className="w-full h-full rounded-full overflow-hidden border-4 border-indigo-100 dark:border-indigo-900 bg-slate-200">
-                                {profile.profilePhoto ? (
+                                {profile?.profilePhoto ? (
                                     <img src={profile.profilePhoto} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-slate-400">
@@ -98,10 +121,12 @@ export const ProfileView = ({ onBack }) => {
                                     </div>
                                 )}
                             </div>
-                            <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white">
-                                <Camera size={24} />
-                                <input type="file" className="hidden" onChange={handleAvatarUpload} accept="image/*" />
-                            </label>
+                            {isOwner && (
+                                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white">
+                                    <Camera size={24} />
+                                    <input type="file" className="hidden" onChange={handleAvatarUpload} accept="image/*" />
+                                </label>
+                            )}
                         </div>
 
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{user.fullName}</h2>
@@ -109,37 +134,24 @@ export const ProfileView = ({ onBack }) => {
                         
                         <div className="flex justify-center gap-4 text-sm mb-6">
                             <div className="text-center">
-                                <div className="font-bold text-indigo-600 dark:text-indigo-400 text-lg">{stats.contributions}</div>
+                                <div className="font-bold text-indigo-600 dark:text-indigo-400 text-lg">{stats?.contributions || 0}</div>
                                 <div className="text-slate-500 text-xs">Uploads</div>
                             </div>
                             <div className="text-center">
-                                <div className="font-bold text-emerald-600 dark:text-emerald-400 text-lg">{stats.reactions}</div>
+                                <div className="font-bold text-emerald-600 dark:text-emerald-400 text-lg">{stats?.reactions || 0}</div>
                                 <div className="text-slate-500 text-xs">Reactions</div>
                             </div>
                         </div>
 
-                        {isEditing ? (
+                        {isEditing && isOwner ? (
                             <div className="space-y-3 text-left">
-                                <div>
-                                    <label className="text-xs font-bold text-slate-500 uppercase">Current Year</label>
-                                    <select 
-                                        className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded p-2 text-sm"
-                                        value={formData.currentYear}
-                                        onChange={e => setFormData({...formData, currentYear: e.target.value})}
-                                    >
-                                        <option>First Year</option>
-                                        <option>Second Year</option>
-                                        <option>Third Year</option>
-                                        <option>Final Year</option>
-                                    </select>
-                                </div>
                                 <Input 
                                     placeholder="LinkedIn URL" 
                                     value={formData.linkedin} 
                                     onChange={e => setFormData({...formData, linkedin: e.target.value})}
                                 />
                                 <Input 
-                                    placeholder="Contact Email (Optional)" 
+                                    placeholder="Contact Email" 
                                     value={formData.contactEmail} 
                                     onChange={e => setFormData({...formData, contactEmail: e.target.value})}
                                 />
@@ -151,13 +163,13 @@ export const ProfileView = ({ onBack }) => {
                                     onChange={e => setFormData({...formData, bio: e.target.value})}
                                 />
                                 <div className="flex gap-2 pt-2">
-                                    <Button onClick={handleSave} className="w-full justify-center">Save Profile</Button>
+                                    <Button onClick={handleSave} className="w-full justify-center">Save</Button>
                                     <Button variant="ghost" onClick={() => setIsEditing(false)} className="w-full">Cancel</Button>
                                 </div>
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {profile.bio && (
+                                {profile?.bio && (
                                     <p className="text-sm text-slate-600 dark:text-slate-300 italic bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg">
                                         "{profile.bio}"
                                     </p>
@@ -166,15 +178,15 @@ export const ProfileView = ({ onBack }) => {
                                 <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400 text-left px-4">
                                     <div className="flex items-center gap-3">
                                         <Calendar size={16} className="text-indigo-500" />
-                                        <span>{profile.currentYear} Student</span>
+                                        <span>{profile?.currentYear || 'Student'}</span>
                                     </div>
-                                    {profile.contactEmail && (
+                                    {profile?.contactEmail && (
                                         <div className="flex items-center gap-3">
                                             <Mail size={16} className="text-indigo-500" />
                                             <span>{profile.contactEmail}</span>
                                         </div>
                                     )}
-                                    {profile.linkedin && (
+                                    {profile?.linkedin && (
                                         <div className="flex items-center gap-3">
                                             <Linkedin size={16} className="text-indigo-500" />
                                             <a href={profile.linkedin} target="_blank" rel="noreferrer" className="hover:underline text-indigo-600 dark:text-indigo-400 truncate">
@@ -184,25 +196,26 @@ export const ProfileView = ({ onBack }) => {
                                     )}
                                 </div>
 
-                                <Button variant="secondary" className="w-full mt-4" onClick={() => setIsEditing(true)}>
-                                    Edit Profile
-                                </Button>
+                                {isOwner && (
+                                    <Button variant="secondary" className="w-full mt-4" onClick={() => setIsEditing(true)}>
+                                        Edit Profile
+                                    </Button>
+                                )}
                             </div>
                         )}
                     </Card>
                 </div>
 
-                {/* RIGHT COLUMN: Contributions */}
+                {/* RIGHT COLUMN */}
                 <div className="lg:col-span-2">
                     <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
-                        <Award className="text-amber-500" /> My Contributions
+                        <Award className="text-amber-500" /> Contributions
                     </h3>
 
                     <div className="space-y-4">
-                        {stats.uploads.length === 0 ? (
+                        {stats?.uploads?.length === 0 ? (
                             <div className="text-center p-12 bg-slate-100 dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800">
-                                <p className="text-slate-500 mb-4">You haven't contributed any notes yet.</p>
-                                <Button onClick={onBack}>Go Upload Something!</Button>
+                                <p className="text-slate-500 mb-4">No contributions yet.</p>
                             </div>
                         ) : (
                             stats.uploads.map((note) => (

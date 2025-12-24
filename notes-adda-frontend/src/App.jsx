@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Shield, Sparkles } from 'lucide-react';
 import api from './services/api';
 
@@ -21,22 +22,20 @@ import { AboutView } from './views/AboutView';
 import { PrivacyView } from './views/PrivacyView';
 import { TermsView } from './views/TermsView';
 import { SupportView } from './views/SupportView';
-import { ProfileView } from './views/ProfileView'; 
+import { ProfileView } from './views/ProfileView';
 
 // Data
 import { BRANCHES, INITIAL_SUBJECTS_DATA } from './data/mockData';
 
-export default function App() {
-  const [view, setView] = useState('branches'); 
-  const [selectedBranch, setSelectedBranch] = useState(null);
-  const [selectedYear, setSelectedYear] = useState(null);
-  const [selectedSemester, setSelectedSemester] = useState(null);
-  const [selectedSubject, setSelectedSubject] = useState(null);
-  
+// Wrapper component to handle routing logic inside the Router context
+function AppContent() {
   const [subjectsData, setSubjectsData] = useState(INITIAL_SUBJECTS_DATA);
   const [user, setUser] = useState({ name: "Guest", role: "guest", loggedIn: false });
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isGeminiOpen, setIsGeminiOpen] = useState(false);
+  
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const fetchSubjects = useCallback(async () => {
     try {
@@ -55,39 +54,19 @@ export default function App() {
     if (token && userStr) {
         setUser({ ...JSON.parse(userStr), loggedIn: true });
     }
-
-    const applyHash = () => {
-      const h = window.location.hash.replace('#', '');
-      if (h) setView(h);
-    };
-    applyHash();
-    window.addEventListener('hashchange', applyHash);
-    return () => window.removeEventListener('hashchange', applyHash);
   }, []);
 
   useEffect(() => {
     fetchSubjects();
-  }, [view, fetchSubjects]);
+  }, [location.pathname, fetchSubjects]);
 
-  const handleBranchSelect = (branchId) => {
-    setSelectedBranch(branchId);
-    setView('home');
+  // Context for AI (Extract from URL if possible)
+  const getAIContext = () => {
+      const pathParts = location.pathname.split('/');
+      // Simple heuristic based on URL structure
+      if (pathParts.includes('notes')) return { subject: decodeURIComponent(pathParts[pathParts.length-1]) };
+      return {};
   };
-
-  const handleSearchSelect = (result) => {
-    if (result.type === 'Branch') {
-        setSelectedBranch(result.id);
-        setView('home');
-    } else if (result.type === 'Subject') {
-        setSelectedBranch(result.data.branchId);
-        setSelectedSemester(result.data.semester);
-        setSelectedSubject(result.data.subject);
-        setView('notes');
-    }
-  };
-
-  // Helper to get readable branch name
-  const currentBranchName = BRANCHES.find(b => b.id === selectedBranch)?.name;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans selection:bg-indigo-500/30 flex flex-col">
@@ -95,82 +74,41 @@ export default function App() {
 
       <Navbar 
         user={user} 
-        setView={setView} 
         onLoginClick={() => setIsLoginOpen(true)} 
         onLogout={() => {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             setUser({ name: "Guest", role: "guest", loggedIn: false });
+            navigate('/');
         }}
         subjectsData={subjectsData}
-        onSearchSelect={handleSearchSelect}
+        onSearchSelect={(result) => {
+            if (result.type === 'Branch') navigate(`/branch/${result.id}`);
+            else if (result.type === 'Subject') navigate(`/branch/${result.data.branchId}/semester/${result.data.semester}/subject/${result.data.subject}`);
+        }}
       />
 
       <main className="relative z-10 container mx-auto px-4 pt-24 pb-12 flex-grow">
-        
-        {view === 'branches' && (
-           <BranchSelectionView onSelectBranch={handleBranchSelect} />
-        )}
-
-        {view === 'home' && selectedBranch && (
-          <HomeView 
-            branchName={currentBranchName}
-            onSelectYear={(year) => { setSelectedYear(year); setView('semester'); }}
-            navigateTo={(v) => setView(v)}
-            onBack={() => setView('branches')}
-          />
-        )}
-        
-        {view === 'home' && !selectedBranch && <BranchSelectionView onSelectBranch={handleBranchSelect} />}
-
-        {view === 'semester' && (
-          <SemesterView 
-            year={selectedYear} 
-            onBack={() => setView('home')}
-            onSelectSemester={(sem) => { setSelectedSemester(sem); setView('subject'); }}
-          />
-        )}
-
-        {view === 'subject' && (
-          <SubjectView 
-            branch={selectedBranch}
-            semester={selectedSemester}
-            subjectsData={subjectsData}
-            setSubjectsData={setSubjectsData}
-            user={user}
-            onBack={() => setView('semester')}
-            onSelectSubject={(sub) => { setSelectedSubject(sub); setView('notes'); }}
-            refreshData={fetchSubjects} 
-          />
-        )}
-
-        {view === 'notes' && (
-          <NotesListView 
-            subject={selectedSubject}
-            onBack={() => setView('subject')}
-            user={user}
-          />
-        )}
-
-        {view === 'mynotes' && <MyNotesWorkspace />}
-        
-        {view === 'upload' && (
-          <ContributeView 
-            branches={BRANCHES}
-            subjectsData={subjectsData}
-            setSubjectsData={setSubjectsData}
-            onBack={() => setView('branches')} 
-          />
-        )}
-
-        {view === 'about' && <AboutView onBack={() => setView('branches')} onGetStarted={() => setView('branches')} />}
-          {view === 'profile' && (
-            <ProfileView onBack={() => setView('branches')} />
-        )}
-        {view === 'privacy' && <PrivacyView onBack={() => setView('branches')} />}
-        {view === 'terms' && <TermsView onBack={() => setView('branches')} />}
-        {view === 'support' && <SupportView onBack={() => setView('branches')} />}
-
+        <Routes>
+            <Route path="/" element={<BranchSelectionView onSelectBranch={(id) => navigate(`/branch/${id}`)} />} />
+            
+            <Route path="/branch/:branchId" element={<HomeWrapper navigate={navigate} />} />
+            <Route path="/branch/:branchId/semester/:semester" element={<SemesterWrapper navigate={navigate} />} />
+            <Route path="/branch/:branchId/semester/:semester/subject/:subject" element={<SubjectWrapper subjectsData={subjectsData} setSubjectsData={setSubjectsData} user={user} navigate={navigate} refreshData={fetchSubjects} />} />
+            <Route path="/notes/:subject" element={<NotesWrapper user={user} navigate={navigate} />} />
+            
+            <Route path="/mynotes" element={<MyNotesWorkspace />} />
+            <Route path="/upload" element={<ContributeView branches={BRANCHES} subjectsData={subjectsData} setSubjectsData={setSubjectsData} onBack={() => navigate(-1)} />} />
+            
+            <Route path="/about" element={<AboutView onBack={() => navigate('/')} onGetStarted={() => navigate('/')} />} />
+            <Route path="/privacy" element={<PrivacyView onBack={() => navigate(-1)} />} />
+            <Route path="/terms" element={<TermsView onBack={() => navigate(-1)} />} />
+            <Route path="/support" element={<SupportView onBack={() => navigate(-1)} />} />
+            
+            {/* Profile Routes */}
+            <Route path="/profile" element={<ProfileView onBack={() => navigate(-1)} />} />
+            <Route path="/u/:username" element={<ProfileView onBack={() => navigate('/')} publicView={true} />} />
+        </Routes>
       </main>
 
       <Footer />
@@ -189,17 +127,7 @@ export default function App() {
         </button>
       </div>
 
-      {isGeminiOpen && (
-        <GeminiAssistant 
-            onClose={() => setIsGeminiOpen(false)} 
-            // Pass the current navigation context to the AI
-            context={{
-                branch: currentBranchName,
-                semester: selectedSemester,
-                subject: selectedSubject
-            }}
-        />
-      )}
+      {isGeminiOpen && <GeminiAssistant onClose={() => setIsGeminiOpen(false)} context={getAIContext()} />}
       
       {isLoginOpen && (
         <AuthModal 
@@ -209,4 +137,61 @@ export default function App() {
       )}
     </div>
   );
+}
+
+// --- ROUTE WRAPPERS TO HANDLE PARAMS ---
+
+const HomeWrapper = ({ navigate }) => {
+    const { branchId } = useParams();
+    const branchName = BRANCHES.find(b => b.id === branchId)?.name;
+    // Map URL structure to component expectations
+    return <HomeView 
+        branchName={branchName} 
+        onSelectYear={(year) => navigate(`/branch/${branchId}/semester/${year}`)} // Using 'year' param as semester grouping in View
+        navigateTo={(path) => navigate(`/${path}`)}
+        onBack={() => navigate('/')} 
+    />;
+};
+
+const SemesterWrapper = ({ navigate }) => {
+    const { branchId, semester: year } = useParams(); // URL uses 'semester' param slot for 'Year 1' etc
+    return <SemesterView 
+        year={year} 
+        onBack={() => navigate(`/branch/${branchId}`)}
+        onSelectSemester={(sem) => navigate(`/branch/${branchId}/semester/${sem}/subject/list`)} // Temporary hack, subject view handles list
+    />;
+};
+
+// Adjusted route logic: SemesterView (Year Selection) -> SubjectView (Semester Selection)
+// The original flow was: Home (Year) -> Semester (Sem) -> Subject (List)
+// Let's align routes:
+// 1. /branch/:id -> Shows Years (HomeView)
+// 2. /branch/:id/year/:year -> Shows Semesters (SemesterView)
+// 3. /branch/:id/semester/:sem -> Shows Subjects (SubjectView)
+
+const SubjectWrapper = ({ subjectsData, setSubjectsData, user, navigate, refreshData }) => {
+    const { branchId, semester } = useParams();
+    return <SubjectView 
+        branch={branchId}
+        semester={semester}
+        subjectsData={subjectsData}
+        setSubjectsData={setSubjectsData}
+        user={user}
+        onBack={() => navigate(`/branch/${branchId}`)} // Simplification
+        onSelectSubject={(sub) => navigate(`/notes/${sub}`)}
+        refreshData={refreshData}
+    />;
+};
+
+const NotesWrapper = ({ user, navigate }) => {
+    const { subject } = useParams();
+    return <NotesListView subject={subject} onBack={() => navigate(-1)} user={user} />;
+};
+
+export default function App() {
+    return (
+        <Router>
+            <AppContent />
+        </Router>
+    );
 }

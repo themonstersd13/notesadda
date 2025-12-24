@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Search, LogOut, ChevronRight, BookOpen, GraduationCap, Sun, Moon, Upload } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { useNavigate, Link } from 'react-router-dom'; // Import Router hooks
 import { BRANCHES } from '../../data/mockData';
 
-export const Navbar = ({ user, setView, onLoginClick, onLogout, subjectsData, onSearchSelect }) => {
+export const Navbar = ({ user, onLoginClick, onLogout, subjectsData, onSearchSelect }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const navigate = useNavigate(); // Hook for navigation
 
   // Theme (light / dark)
   const [theme, setTheme] = useState(() => {
@@ -41,48 +37,27 @@ export const Navbar = ({ user, setView, onLoginClick, onLogout, subjectsData, on
     }
   }, [theme]);
 
+  // Scroll effect
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // --- DYNAMIC SEARCH LOGIC ---
   useEffect(() => {
-    if (!searchTerm.trim()) {
-        setSearchResults([]);
-        return;
-    }
-
+    if (!searchTerm.trim()) { setSearchResults([]); return; }
     const query = searchTerm.toLowerCase();
     const results = [];
-
-    // 1. Search Branches
-    BRANCHES.forEach(branch => {
-        if (branch.name.toLowerCase().includes(query)) {
-            results.push({ type: 'Branch', title: branch.name, id: branch.id, data: branch });
-        }
-    });
-
-    // 2. Search Subjects (Flattened)
-    if (subjectsData) {
-        Object.entries(subjectsData).forEach(([branchId, semesters]) => {
-            Object.entries(semesters).forEach(([semester, subjects]) => {
-                subjects.forEach(subject => {
-                    if (subject.toLowerCase().includes(query)) {
-                        results.push({ 
-                            type: 'Subject', 
-                            title: subject, 
-                            subtitle: `${BRANCHES.find(b=>b.id===branchId)?.name || branchId} • ${semester}`,
-                            data: { branchId, semester, subject }
-                        });
-                    }
-                });
-            });
-        });
-    }
-
-    setSearchResults(results.slice(0, 8)); // Limit to 8 results
+    BRANCHES.forEach(branch => { if (branch.name.toLowerCase().includes(query)) results.push({ type: 'Branch', title: branch.name, id: branch.id, data: branch }); });
+    if (subjectsData) { Object.entries(subjectsData).forEach(([branchId, semesters]) => { Object.entries(semesters).forEach(([semester, subjects]) => { subjects.forEach(subject => { if (subject.toLowerCase().includes(query)) { results.push({ type: 'Subject', title: subject, subtitle: `${BRANCHES.find(b=>b.id===branchId)?.name || branchId} • ${semester}`, data: { branchId, semester, subject } }); } }); }); }); }
+    setSearchResults(results.slice(0, 8));
   }, [searchTerm, subjectsData]);
 
   const handleResultClick = (result) => {
     setSearchTerm("");
     setSearchResults([]);
-    onSearchSelect(result);
+    onSearchSelect(result); // This is handled in App.jsx now
   };
 
   return (
@@ -90,7 +65,7 @@ export const Navbar = ({ user, setView, onLoginClick, onLogout, subjectsData, on
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div 
           className="flex items-center gap-2 cursor-pointer group" 
-          onClick={() => setView('branches')}
+          onClick={() => navigate('/')} // Navigate Home
         >
           <div className="p-1.5 rounded bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg group-hover:shadow-indigo-500/30 transition-shadow">
             <GraduationCap size={18} className="text-white" />
@@ -100,13 +75,12 @@ export const Navbar = ({ user, setView, onLoginClick, onLogout, subjectsData, on
 
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-6 mr-2">
-            <button onClick={() => setView('branches')} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors">Home</button>
-            <button onClick={() => setView('about')} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors">About</button>
-            <button onClick={() => setView('mynotes')} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors">My Desk</button>
-            {/* Added Contribute Button */}
-            <button onClick={() => setView('upload')} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center gap-1">
+            <Link to="/" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors">Home</Link>
+            <Link to="/about" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors">About</Link>
+            <Link to="/mynotes" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors">My Desk</Link>
+            <Link to="/upload" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center gap-1">
                <Upload size={14} /> Contribute
-            </button>
+            </Link>
           </div>
 
           <div className="hidden md:block relative z-50">
@@ -120,16 +94,11 @@ export const Navbar = ({ user, setView, onLoginClick, onLogout, subjectsData, on
                  />
                  <Search size={14} className="absolute left-3.5 top-2.5 text-slate-500" />
              </div>
-
-             {/* SEARCH DROPDOWN */}
+             {/* Search Dropdown logic same as before */}
              {searchResults.length > 0 && (
                  <div className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
                      {searchResults.map((res, idx) => (
-                         <div 
-                            key={idx} 
-                            onClick={() => handleResultClick(res)}
-                            className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0 flex items-center gap-3"
-                         >
+                         <div key={idx} onClick={() => handleResultClick(res)} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0 flex items-center gap-3">
                              <div className={`p-2 rounded-lg ${res.type === 'Branch' ? 'bg-indigo-500/10 text-indigo-500 dark:bg-indigo-500/20 dark:text-indigo-400' : 'bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/20 dark:text-emerald-400'}`}>
                                  {res.type === 'Branch' ? <ChevronRight size={14} /> : <BookOpen size={14} />}
                              </div>
@@ -157,10 +126,9 @@ export const Navbar = ({ user, setView, onLoginClick, onLogout, subjectsData, on
           {user.loggedIn ? (
             <div className="flex items-center gap-3">
                 <button 
-                    onClick={() => setView('profile')} 
+                    onClick={() => navigate(`/u/${user.username || 'profile'}`)} 
                     className="flex items-center gap-2 group hover:bg-slate-100 dark:hover:bg-slate-800 py-1 px-3 rounded-full transition-all"
                 >
-                    {/* Placeholder Avatar or User Initial */}
                     <div className="w-7 h-7 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold">
                         {user.name.charAt(0)}
                     </div>
