@@ -43,9 +43,21 @@ export const MyNotesWorkspace = () => {
   
   // --- UPLOAD LOGIC (Unchanged) ---
   const handleFileDrop = (e) => { e.preventDefault(); e.stopPropagation(); if (e.dataTransfer.files && e.dataTransfer.files[0]) { setUploadFile(e.dataTransfer.files[0]); } };
-  const handlePersonalUpload = async () => { if (!uploadFile) return; setIsUploading(true); try { const formData = new FormData(); formData.append('file', uploadFile); formData.append('title', uploadName || uploadFile.name); formData.append('branch', 'Personal'); formData.append('semester', 'Personal'); formData.append('subject', 'My Desk Uploads'); formData.append('isNewSubject', 'true'); const res = await api.post('/notes', formData, { headers: { 'Content-Type': 'multipart/form-data' } }); const newItem = { id: Date.now().toString(), title: uploadName || uploadFile.name, type: 'file', fileUrl: res.data.fileUrl, parentId: currentFolderId, color: 'blue', isPersonal: true }; setItems([...items, newItem]); setUploadFile(null); setUploadName(""); setIsUploadOpen(false); alert("File uploaded!"); } catch (err) { console.error(err); alert("Upload failed."); } finally { setIsUploading(false); } };
+  const handlePersonalUpload = async () => { if (!uploadFile) return; setIsUploading(true); try { const formData = new FormData(); formData.append('file', uploadFile); formData.append('title', uploadName || uploadFile.name); formData.append('branch', 'Personal'); formData.append('semester', 'Personal'); formData.append('subject', 'My Desk Uploads'); formData.append('isNewSubject', 'true'); const res = await api.post('/notes', formData, { headers: { 'Content-Type': 'multipart/form-data' } }); // Store backend note id so we can delete it later
+const newItem = { id: Date.now().toString(), noteId: res.data._id, title: uploadName || uploadFile.name, type: 'file', fileUrl: res.data.fileUrl, parentId: currentFolderId, color: 'blue', isPersonal: true }; setItems([...items, newItem]); setUploadFile(null); setUploadName(""); setIsUploadOpen(false); alert("File uploaded!"); } catch (err) { console.error(err); alert("Upload failed."); } finally { setIsUploading(false); } };
   const addFolder = () => { const name = prompt("Folder Name:"); if (!name) return; const newFolder = { id: Date.now().toString(), title: name, type: 'folder', parentId: currentFolderId, color: 'amber' }; setItems([...items, newFolder]); };
-  const removeItem = (e, id) => { e.stopPropagation(); if(window.confirm("Delete?")) { setItems(items.filter(i => i.id !== id && i.parentId !== id)); } };
+  const removeItem = async (e, id) => { e.stopPropagation(); const item = items.find(i => i.id === id); if (!item) return; if (!window.confirm("Delete?")) return;
+    // If this file was uploaded to the server (has noteId), delete it server-side so it also disappears from profile
+    if (item.noteId) {
+        try {
+            await api.delete(`/notes/${item.noteId}`);
+        } catch (err) {
+            console.error('Failed to delete server note:', err);
+            alert(err.response?.data?.message || 'Failed to delete file from server.');
+            return; // Do not remove local item if server delete failed
+        }
+    }
+    setItems(items.filter(i => i.id !== id && i.parentId !== id)); };
   const openItem = (item) => { if (item.type === 'folder') { setCurrentFolderId(item.id); } else { if (item.fileUrl) { window.open(item.fileUrl, '_blank'); } else { alert(`Opening "${item.title}"`); } } };
 
   return (
