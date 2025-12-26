@@ -100,7 +100,7 @@ function AppContent() {
             <Route path="/mynotes" element={<MyNotesWorkspace />} />
             <Route path="/upload" element={<ContributeView branches={BRANCHES} subjectsData={subjectsData} setSubjectsData={setSubjectsData} onBack={() => navigate(-1)} />} />
             
-            <Route path="/about" element={<AboutView onBack={() => navigate('/')} onGetStarted={() => navigate('/')} />} />
+            <Route path="/about" element={<AboutView user={user} onBack={() => navigate('/')} onGetStarted={() => navigate('/')} />} />
             <Route path="/privacy" element={<PrivacyView onBack={() => navigate(-1)} />} />
             <Route path="/terms" element={<TermsView onBack={() => navigate(-1)} />} />
             <Route path="/support" element={<SupportView onBack={() => navigate(-1)} />} />

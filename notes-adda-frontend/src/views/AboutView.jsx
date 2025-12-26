@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
-export const AboutView = ({ onBack, onGetStarted }) => {
+export const AboutView = ({ user,onBack, onGetStarted }) => {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       
@@ -25,9 +25,9 @@ export const AboutView = ({ onBack, onGetStarted }) => {
           <p className="text-lg md:text-xl text-slate-300 mb-8 leading-relaxed">
             NotesAdda is a collaborative platform built to help students share study materials, access organized notes, and leverage AI for better learning.
           </p>
-          <div className="mb-4">
+          {!user.loggedIn && (<div className="mb-4">
             <span className="text-sm font-semibold text-amber-500">Please Login/Register to view or download notes.</span>
-          </div>
+          </div>)}
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button onClick={onGetStarted} className="px-8 py-3 text-lg">Start Exploring</Button>
             <Button variant="secondary" onClick={() => window.open('https://github.com/themonstersd13/notesadda/', '_blank')} className="px-8 py-3 text-lg">

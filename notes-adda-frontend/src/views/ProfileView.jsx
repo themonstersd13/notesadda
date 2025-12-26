@@ -71,13 +71,24 @@ export const ProfileView = ({ onBack }) => {
     }, [username, navigate]);
 
     const handleSave = async () => {
+        // --- EMAIL VALIDATION START ---
+        if (formData.contactEmail && formData.contactEmail.trim() !== "") {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(formData.contactEmail)) {
+                alert("Please enter a valid email address.");
+                return;
+            }
+        }
+        // --- EMAIL VALIDATION END ---
+
         try {
             await api.put('/profile/me', formData);
             setIsEditing(false);
             // Quick refresh data
             setData(prev => ({ ...prev, profile: { ...prev.profile, ...formData } }));
         } catch (err) {
-            alert('Failed to update profile');
+            // Display specific error message from backend if available
+            alert(err.response?.data?.message || 'Failed to update profile');
         }
     };
 
@@ -148,6 +159,19 @@ export const ProfileView = ({ onBack }) => {
 
                         {isEditing && isOwner ? (
                             <div className="space-y-3 text-left">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Current Year</label>
+                                    <select 
+                                        className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded p-2 text-sm"
+                                        value={formData.currentYear}
+                                        onChange={e => setFormData({...formData, currentYear: e.target.value})}
+                                    >
+                                        <option>First Year</option>
+                                        <option>Second Year</option>
+                                        <option>Third Year</option>
+                                        <option>Final Year</option>
+                                    </select>
+                                </div>
                                 <Input 
                                     placeholder="LinkedIn URL" 
                                     value={formData.linkedin} 
@@ -235,7 +259,7 @@ export const ProfileView = ({ onBack }) => {
                                         </div>
                                     </div>
                                     
-                                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                    <div className="flex items-center gap-4">
                                         <div className="flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded">
                                             <ThumbsUp size={12} />
                                             {note.likes || 0}
@@ -249,21 +273,29 @@ export const ProfileView = ({ onBack }) => {
                                             View
                                         </a>
 
-                                        {(isOwner || isAdminUser) && (
+                                        {/* DELETE BUTTON: ONLY VISIBLE TO ADMINS */}
+                                        {isAdminUser && (
                                             <button
                                                 onClick={async (e) => {
                                                     e.stopPropagation();
                                                     if (!window.confirm(`Delete "${note.title}"? This cannot be undone.`)) return;
                                                     try {
                                                         await api.delete(`/notes/${note._id}`);
-                                                        setData(prev => ({ ...prev, stats: { ...prev.stats, uploads: prev.stats.uploads.filter(u => u._id !== note._id) } }));
+                                                        // Update local state to remove the deleted note
+                                                        setData(prev => ({ 
+                                                            ...prev, 
+                                                            stats: { 
+                                                                ...prev.stats, 
+                                                                uploads: prev.stats.uploads.filter(u => u._id !== note._id) 
+                                                            } 
+                                                        }));
                                                         alert('Deleted');
                                                     } catch (err) {
                                                         console.error('Delete failed', err);
                                                         alert(err.response?.data?.message || 'Failed to delete');
                                                     }
                                                 }}
-                                                className="text-rose-500 hover:text-rose-600 text-xs font-medium flex items-center gap-2"
+                                                className="text-rose-500 hover:text-rose-600 text-xs font-medium flex items-center gap-1 transition-colors"
                                             >
                                                 <Trash2 size={14} /> Delete
                                             </button>
