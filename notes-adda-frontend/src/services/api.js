@@ -15,4 +15,21 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Handle expired/invalid tokens – force re-login on 401
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (
+            error.response &&
+            error.response.status === 401 &&
+            !/\/auth\/(login|register)$/.test(error.config.url)
+        ) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.replace('/');
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;
